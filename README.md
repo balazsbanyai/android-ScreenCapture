@@ -1,3 +1,9 @@
+Difference from source repo
+------------
+
+Added support to enter the desired virtual display size
+
+
 Android ScreenCapture Sample
 ===================================
 
