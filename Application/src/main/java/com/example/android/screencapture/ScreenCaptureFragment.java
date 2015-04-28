@@ -19,6 +19,7 @@ package com.example.android.screencapture;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Point;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.projection.MediaProjection;
@@ -27,12 +28,15 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.util.DisplayMetrics;
+import android.view.Display;
 import android.view.LayoutInflater;
 import android.view.Surface;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
 import com.example.android.common.logger.Log;
@@ -60,6 +64,8 @@ public class ScreenCaptureFragment extends Fragment implements View.OnClickListe
     private MediaProjectionManager mMediaProjectionManager;
     private Button mButtonToggle;
     private SurfaceView mSurfaceView;
+    private EditText mDisplayWidth;
+    private EditText mDisplayHeight;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -82,6 +88,25 @@ public class ScreenCaptureFragment extends Fragment implements View.OnClickListe
         mSurface = mSurfaceView.getHolder().getSurface();
         mButtonToggle = (Button) view.findViewById(R.id.toggle);
         mButtonToggle.setOnClickListener(this);
+        mDisplayWidth = (EditText) view.findViewById(R.id.display_width);
+        mDisplayHeight = (EditText) view.findViewById(R.id.display_height);
+        view.findViewById(R.id.reset).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                resetResoultion();
+            }
+        });
+        resetResoultion();
+    }
+
+    private void resetResoultion() {
+        WindowManager windowManager = getActivity().getWindowManager();
+        Display defaultDisplay = windowManager.getDefaultDisplay();
+        Point defaultSize = new Point();
+        defaultDisplay.getRealSize(defaultSize);
+
+        mDisplayWidth.setText(String.valueOf(defaultSize.x));
+        mDisplayHeight.setText(String.valueOf(defaultSize.y));
     }
 
     @Override
@@ -180,20 +205,26 @@ public class ScreenCaptureFragment extends Fragment implements View.OnClickListe
     }
 
     private void setUpVirtualDisplay() {
+
+        int width = Integer.valueOf(mDisplayWidth.getText().toString());
+        int height = Integer.valueOf(mDisplayHeight.getText().toString());
+
         Log.i(TAG, "Setting up a VirtualDisplay: " +
-                mSurfaceView.getWidth() + "x" + mSurfaceView.getHeight() +
+                width + "x" + height +
                 " (" + mScreenDensity + ")");
         mVirtualDisplay = mMediaProjection.createVirtualDisplay("ScreenCapture",
-                mSurfaceView.getWidth(), mSurfaceView.getHeight(), mScreenDensity,
+                width, height, mScreenDensity,
                 DisplayManager.VIRTUAL_DISPLAY_FLAG_AUTO_MIRROR,
                 mSurface, null, null);
         mButtonToggle.setText(R.string.stop);
+        Log.i(TAG, "VirtualDisplay created: " + mVirtualDisplay.getDisplay().getDisplayId());
     }
 
     private void stopScreenCapture() {
         if (mVirtualDisplay == null) {
             return;
         }
+        Log.i(TAG, "VirtualDisplay releasing: " + mVirtualDisplay.getDisplay().getDisplayId());
         mVirtualDisplay.release();
         mVirtualDisplay = null;
         mButtonToggle.setText(R.string.start);
